@@ -330,7 +330,7 @@ class Tool(VisibilityHandler2D):
           #print("Does", _user_repr.view_transform_node.Name.value, "(", _user_repr_display_group_tag, ") see", _handled_display_group_tag, "?", _visible)
 
           if _visible:
-            if _user_repr.view_transform_node.Name.value == "exit":
+            if _user_repr.is_in_virtual_display():
               _assigned_user_tool_visible_for.append(_user_repr.view_transform_node.Parent.value.Name.value + "_" + _user_repr.head.Name.value)
             else:
               _assigned_user_tool_visible_for.append(_user_repr.view_transform_node.Name.value)
