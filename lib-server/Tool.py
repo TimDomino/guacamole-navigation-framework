@@ -343,15 +343,16 @@ class Tool(VisibilityHandler2D):
         # reset initial GroupName state
         _tool_repr.reset_visualization_group_names()
 
+        if _tool_repr.active == False:
+          if _tool_repr_of_assigned_user.active == False:
+
+            # users on same navigation, but assigned user tool representation is inactive
+            _tool_repr.append_to_visualization_group_names("do_not_display_group")
+
         # if user does not share the assigned user's navigation, hide the tool representation
-        if _tool_repr.USER_REPRESENTATION.connected_navigation_id != _tool_repr_of_assigned_user.USER_REPRESENTATION.connected_navigation_id:
+        elif _tool_repr.USER_REPRESENTATION.connected_navigation_id != _tool_repr_of_assigned_user.USER_REPRESENTATION.connected_navigation_id:
           _tool_repr.append_to_visualization_group_names("do_not_display_group")
           _assigned_user_tool_visible_for.append(_tool_repr.USER_REPRESENTATION.view_transform_node.Name.value)
-
-        elif _tool_repr_of_assigned_user.active == False:
-          
-          # users on same navigation, but assigned user tool representation is inactive
-          _tool_repr.append_to_visualization_group_names("do_not_display_group")
 
       # check for all user representations outside the handled display group
       for _user_repr in ApplicationManager.all_user_representations:
