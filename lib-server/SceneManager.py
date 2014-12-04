@@ -12,7 +12,6 @@ import avango.daemon
 
 # import framework libraries
 from ApplicationManager import *
-import Utilities
 from Scene import *
 from ConsoleIO import *
 

@@ -76,6 +76,10 @@ class ToolRepresentation(avango.script.Script):
     # Boolean value saying whether this ToolRepresentation is used within a virtual display group.
     self.in_virtual_display = IN_VIRTUAL_DISPLAY
 
+    ## @var active
+    # Boolean value saying whether this ToolRepresentation is to be used for visible and active representation checks.
+    self.active = True
+
     # set evaluation policy
     self.always_evaluate(True)
 
@@ -94,6 +98,34 @@ class ToolRepresentation(avango.script.Script):
   def get_world_transform(self):
 
     return self.tool_transform_node.WorldTransform.value
+
+  ## Update active flag. Has to be evaluated every frame.
+  def update_active_flag(self):
+
+    _screens_to_check = self.USER_REPRESENTATION.screens
+
+    ## condition 1: check if tool representation is inside according frustum ##
+    _tool_repr_in_frustum = False
+
+    # iterate over every screen of user representation
+    for _screen in _screens_to_check:
+      _visible = Utilities.is_inside_frustum(POINT = self.get_world_transform().get_translate()
+                                           , USER_REPRESENTATION = self.USER_REPRESENTATION
+                                           , SCREEN = _screen)
+
+      # if visible in one screen's frustum, the check was successful
+      if _visible == True:
+        _tool_repr_in_frustum = True
+        break
+
+    ## condition 2: check if tool representation intersects according frustum ##
+    # implementation will be postponed
+
+    # update active flag
+    if _tool_repr_in_frustum != self.active:
+      self.active = _tool_repr_in_frustum
+      self.TOOL_INSTANCE.handle_correct_visibility_groups_for(self.USER_REPRESENTATION.DISPLAY_GROUP)
+
 
   ## Has to be evaluated every frame.
   def perform_tool_node_transformation(self):
@@ -311,6 +343,9 @@ class Tool(VisibilityHandler2D):
         # reset initial GroupName state
         _tool_repr.reset_visualization_group_names()
 
+        #if _tool_repr.active == False:
+        #  _tool_repr.append_to_visualization_group_names("do_not_display_group")
+
         # if user does not share the assigned user's navigation, hide the tool representation
         if _tool_repr.USER_REPRESENTATION.connected_navigation_id != _tool_repr_of_assigned_user.USER_REPRESENTATION.connected_navigation_id:
           _tool_repr.append_to_visualization_group_names("do_not_display_group")
@@ -336,6 +371,13 @@ class Tool(VisibilityHandler2D):
               _assigned_user_tool_visible_for.append(_user_repr.view_transform_node.Name.value)
 
       # make tool holder tool representation visible for all others on different navigations and display groups
-      for _string in _assigned_user_tool_visible_for:
-        if _tool_repr_of_assigned_user != None:
-          _tool_repr_of_assigned_user.append_to_visualization_group_names(_string)
+      if _tool_repr_of_assigned_user != None:
+
+        if _tool_repr_of_assigned_user.active:
+
+          for _string in _assigned_user_tool_visible_for:
+            _tool_repr_of_assigned_user.append_to_visualization_group_names(_string)
+
+        else:
+
+          _tool_repr_of_assigned_user.append_to_visualization_group_names("do_not_display_group")

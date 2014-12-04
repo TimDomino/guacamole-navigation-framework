@@ -16,6 +16,7 @@ import Utilities
 from TrackingReader import TrackingTargetReader
 from scene_config import *
 from SceneManager import *
+import Utilities
 
 import time
 
@@ -176,6 +177,7 @@ class RayPointerRepresentation(ToolRepresentation):
 
     # base class evaluate
     self.perform_tool_node_transformation()
+    self.update_active_flag()
 
     # update border color according to highlight enabled
     
@@ -402,7 +404,9 @@ class RayPointer(Tool):
       for _tool_repr in self.tool_representations:
 
         # do not consider virtual displays that are not visible
-        if _tool_repr.is_in_virtual_display() and _tool_repr.DISPLAY_GROUP.visible == "False":
+        # or inactive tool representations
+        if _tool_repr.is_in_virtual_display() and _tool_repr.DISPLAY_GROUP.visible == "False" or \
+           _tool_repr.active == False:
           continue
 
         # do not consider tool representations that have already been considered as primary
@@ -438,9 +442,9 @@ class RayPointer(Tool):
 
             for _screen in _user_repr.screens:
 
-              _visible = self.is_inside_frustum(_pick_world_position
-                                    , _user_repr
-                                    , _screen)
+              _visible = Utilities.is_inside_frustum(_pick_world_position
+                                                   , _user_repr
+                                                   , _screen)
 
               if _visible == True:
                 # append to candidate list if visible
@@ -687,93 +691,3 @@ class RayPointer(Tool):
 
     if self.sf_pointer_button2.value == True:
       self.set_hierarchy_selection_level(max(self.hierarchy_selection_level - 1, -1))
-
-  
-  def compute_plane(self, POINT1, POINT2, POINT3):
-
-    _v1 = POINT1 - POINT3
-    _v2 = POINT2 - POINT3
-    _v1.normalize()
-    _v2.normalize()
-    
-    _n = _v1.cross(_v2)
-    _n.normalize()
-    
-    _d = - _n.dot(POINT1)
-    return (_n, _d)
-
-
-  def compute_point_plane_distance(self, N, D, POINT):
-  
-    # compute point plane distance: <0.0 --> in front of plane: >0.0 behind plane
-    return N.x * POINT.x + N.y * POINT.y + N.z * POINT.z + D
-
-
-
-  ## Checks if a point is inside the viewing frustum of a user.
-  # @param POINT The point to be checked.
-  # @param USER_REPRESENTATION The UserRepresentation instance to which SCREEN is belonging to.
-  # @param SCREEN The screen to create the viewing frustum for. 
-  def is_inside_frustum(self, POINT, USER_REPRESENTATION, SCREEN):
-
-    _user_head_world_pos = USER_REPRESENTATION.head.WorldTransform.value.get_translate()
-    _screen_world_mat = SCREEN.WorldTransform.value
-
-    # if user representation is in virtual display, start intersecting from the virtual display plane
-    if USER_REPRESENTATION.is_in_virtual_display():
-      _head_in_screen_pos = avango.gua.make_inverse_mat(_screen_world_mat) * _user_head_world_pos
-      _near_clip = abs(_head_in_screen_pos.z)
-    else:
-      _near_clip = SceneManager.current_near_clip
-
-    _far_clip = SceneManager.current_far_clip
-
-
-    # head space (but with nav orientation)
-    _head_mat = SCREEN.WorldTransform.value
-    _head_mat.set_translate(_user_head_world_pos)
-        
-    _point = avango.gua.make_inverse_mat(_head_mat) * POINT # point in head space
-    _depth = abs(_point.z)
-    if (_depth < _near_clip) or (_depth > _far_clip): # point in front of near plane or behind far plane --> outside frustum
-      return False
-
-        
-    # compute screen corner points
-    _screen_width = SCREEN.Width.value
-    _screen_height = SCREEN.Height.value
-    
-    _tl_world_pos = _screen_world_mat * avango.gua.Vec3(-_screen_width * 0.5, _screen_height * 0.5, 0.0)
-    _tr_world_pos = _screen_world_mat * avango.gua.Vec3(_screen_width * 0.5, _screen_height * 0.5, 0.0)
-    _bl_world_pos = _screen_world_mat * avango.gua.Vec3(-_screen_width * 0.5, -_screen_height * 0.5, 0.0)
-    _br_world_pos = _screen_world_mat * avango.gua.Vec3(_screen_width * 0.5, -_screen_height * 0.5, 0.0)
-
-    _tl_world_pos = avango.gua.Vec3(_tl_world_pos.x, _tl_world_pos.y, _tl_world_pos.z)
-    _tr_world_pos = avango.gua.Vec3(_tr_world_pos.x, _tr_world_pos.y, _tr_world_pos.z)    
-    _bl_world_pos = avango.gua.Vec3(_bl_world_pos.x, _bl_world_pos.y, _bl_world_pos.z)
-    _br_world_pos = avango.gua.Vec3(_br_world_pos.x, _br_world_pos.y, _br_world_pos.z)
-    
-    ## compute lateral planes ##
-    _left_plane = self.compute_plane(_bl_world_pos, _tl_world_pos, _user_head_world_pos)
-    _distance = self.compute_point_plane_distance(_left_plane[0], _left_plane[1], POINT)
-    if _distance < 0.0: # point in front of left plane --> outside frustum
-      return False
-
-    _right_plane = self.compute_plane(_tr_world_pos, _br_world_pos, _user_head_world_pos)
-    _distance = self.compute_point_plane_distance(_right_plane[0], _right_plane[1], POINT)
-    if _distance < 0.0: # point in front of right plane --> outside frustum
-      return False
-
-    _top_plane = self.compute_plane(_tl_world_pos, _tr_world_pos, _user_head_world_pos)
-    _distance = self.compute_point_plane_distance(_top_plane[0], _top_plane[1], POINT)
-    if _distance < 0.0: # point in front of top plane --> outside frustum
-      return False
-
-    _bottom_plane = self.compute_plane(_br_world_pos, _bl_world_pos, _user_head_world_pos)
-    _distance = self.compute_point_plane_distance(_bottom_plane[0], _bottom_plane[1], POINT)
-    if _distance < 0.0: # point in front of bottom plane plane --> outside frustum
-      return False
-
-    return True    
-    
-
