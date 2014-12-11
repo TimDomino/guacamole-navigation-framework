@@ -7,7 +7,6 @@
 # kill running python on this machine
 if [ "$2" != false ] ; then
     killall python3
-    killall python
 fi
 
 # get directory of script

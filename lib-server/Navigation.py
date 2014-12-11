@@ -72,9 +72,9 @@ class Navigation(VisibilityHandler1D):
     # get the selected material 
     ## @var trace_material
     # The material to be used for the movement traces.
-    self.trace_material = self.trace_materials[self.number_of_instances]
-    self.number_of_instances += 1
-    self.number_of_instances = self.number_of_instances % len(self.trace_materials)
+    self.trace_material = self.trace_materials[Navigation.number_of_instances]
+    Navigation.number_of_instances += 1
+    Navigation.number_of_instances = Navigation.number_of_instances % len(self.trace_materials)
 
 
   ### functions ###

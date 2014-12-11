@@ -41,12 +41,6 @@ class SteeringNavigation(Navigation):
   # Boolean field to indicate if the navigation is to be reset.
   sf_reset_trigger = avango.SFBool()
 
-  '''
-  ## @var sf_coupling_trigger
-  # Boolean field to indicate if the coupling mechanism is to be triggered.
-  sf_coupling_trigger = avango.SFBool()
-  '''
-
   ## @var sf_nav_mode_toggle_trigger
   # Boolean field to indicate if the change of the dof mode is to be triggered.
   sf_nav_mode_toggle_trigger = avango.SFBool()
@@ -136,7 +130,7 @@ class SteeringNavigation(Navigation):
     # Boolean indicating if the input values should be inverted.
     self.invert = INVERT
     
-    self.transition_duration = 2.0 # in seconds
+    self.transition_duration = 1.5 # in seconds
 
 
     ### variables ###
@@ -170,6 +164,7 @@ class SteeringNavigation(Navigation):
     self.transition_target_quat = None
     
     self.transition_start_time = None
+
 
     ### subclasses ###
         
@@ -206,6 +201,9 @@ class SteeringNavigation(Navigation):
     
     if self.input_device_type == "Spacemouse":
       self.set_nav_mode(1) # set to 6DoF navigation
+
+    else:
+      self.set_nav_mode(0) # set to ground-based navigation
     
 
     '''
@@ -227,7 +225,6 @@ class SteeringNavigation(Navigation):
     ### field connections ###
     
     self.sf_reset_trigger.connect_from(self.device.sf_reset_trigger)
-    #self.sf_coupling_trigger.connect_from(self.device.sf_coupling_trigger)
     self.sf_nav_mode_toggle_trigger.connect_from(self.device.sf_dof_trigger)
     self.mf_rel_input_values.connect_from(self.device.mf_dof)
     self.sf_reference_mat.connect_from(self.device.sf_station_mat)
@@ -243,7 +240,7 @@ class SteeringNavigation(Navigation):
 
     if _groundfollowing_flag == True:
 
-      # further variables
+      ### further variables
     
       ## @var falling
       # A boolean indicating if the user is currently falling. Used for fall speed computations.
@@ -251,21 +248,16 @@ class SteeringNavigation(Navigation):
 
       ## @var initial_fall_velocity
       # The starting velocity when the user is falling in meters per frame. Is increased the longer the falling process goes on.
-      self.initial_fall_velocity = 0.05
+      self.initial_fall_velocity = 0.0
 
       ## @var height_modification_factor
       # Scaling factor used for the modification of up and down vectors.
-      self.height_modification_factor = 0.15
+      self.height_modification_factor = 0.15 # in meter per frame
 
       # fall velocity in meter per frame
       ## @var fall_velocity
       # Speed when the user is falling in meters per frame.
       self.fall_velocity = self.initial_fall_velocity
-
-      # pick length in meter
-      ## @var ground_pick_length
-      # Length of the ground following ray.
-      self.ground_pick_length = 100.0
 
       ## @var ground_pick_direction_mat
       # Direction of the ground following ray.
@@ -275,6 +267,10 @@ class SteeringNavigation(Navigation):
       # Starting height of the ground following ray.
       self.ray_start_height = float(GROUND_FOLLOWING_SETTINGS[1])
 
+      # pick length in meter
+      ## @var ground_pick_length
+      # Length of the ground following ray.
+      self.ground_pick_length = float(GROUND_FOLLOWING_SETTINGS[2])
 
       ## @var groundfollowing_trigger
       # Triggers framewise evaluation of respective callback method
@@ -331,10 +327,20 @@ class SteeringNavigation(Navigation):
     ## @var transition_target_quat
     # Quaternion representing the target rotation of the animation
     self.transition_target_quat = _nav_mat.get_rotate()
+    
+    # calc transition duration
+    _quat = (avango.gua.make_inverse_mat(avango.gua.make_rot_mat(self.transition_target_quat)) * avango.gua.make_rot_mat(self.transition_start_quat)).get_rotate()
+    _angle = _quat.get_angle()
+
+    if _angle == 0.0: # no rotation difference --> no transition necessary
+      return
+      
+    self.transition_duration = min(_angle * 0.03, 5.0)
 
     self.transition_start_time = time.time()
     
-    self.nav_mode_transition_trigger.Active.value = True # enable transition callback
+    # enable transition callback
+    self.nav_mode_transition_trigger.Active.value = True
   
 
   ## Sets the pick_direction attribute.
@@ -349,71 +355,6 @@ class SteeringNavigation(Navigation):
 
     self.ground_pick_direction_mat = avango.gua.make_rot_mat(_angle, _axis)
 
-
-  '''
-  ## Activates 3-DOF (realistic) navigation mode.
-  def activate_realistic_mode(self):
-
-    # remove pitch and roll from current orientation
-    _current_mat = self.sf_abs_mat.value
-    _current_trans = _current_mat.get_translate()
-    _current_yaw = Utilities.get_yaw(_current_mat)
-
-    ## @var start_rot
-    # Quaternion representing the start rotation of the animation
-    self.start_rot = self.sf_abs_mat.value.get_rotate()
-
-    ## @var target_rot
-    # Quaternion representing the target rotation of the animation
-    self.target_rot = avango.gua.make_rot_mat(math.degrees(_current_yaw), 0, 1, 0).get_rotate()
-
-    ## @var animation_time
-    # Time of the rotation animation in relation to the rotation distance.
-    self.animation_time = 2 * math.sqrt(math.pow(self.start_rot.x - self.target_rot.x, 2) \
-      + math.pow(self.start_rot.y - self.target_rot.y, 2) \
-      + math.pow(self.start_rot.z - self.target_rot.z, 2) \
-      + math.pow(self.start_rot.w - self.target_rot.w, 2))
-   
-    # if no animation is needed, set animation time to a minimum value to avoid division by zero
-    if self.animation_time == 0.0:
-      self.animation_time = 0.01
-
-    ## @var start_trans
-    # Starting translation vector of the animation.
-    self.start_trans = _current_trans
-
-    ## @var animation_start_time
-    # Point in time where the animation started.
-    self.animation_start_time = self.timer.Time.value
- 
-    self.in_nav_mode_transition = True                       
-
-  ## Activates 6-DOF (unrealistic) navigation mode.
-  def deactivate_realistic_mode(self):
-    self.inputmapping.deactivate_realistic_mode()
-  '''
-  
-  '''
-  ## Animates the removal of pitch and roll angles when switching from 6-DOF (unrealistic) to 3-DOF (realistic) navigation mode.
-  def animate_dofchange(self):
-
-    _current_time = self.timer.Time.value
-    _slerp_ratio = (_current_time - self.animation_start_time) / self.animation_time
-
-    # when end of animation is reached
-    if _slerp_ratio > 1:
-      _slerp_ratio = 1
-      self.in_nav_mode_transition = False
-      self.inputmapping.activate_realistic_mode()
-
-    # compute slerp position and set it on the player's inputmapping
-    _transformed_quat = self.start_rot.slerp_to(self.target_rot, _slerp_ratio)
-
-    _position_yaw_mat = avango.gua.make_trans_mat(self.start_trans.x, self.start_trans.y, self.start_trans.z) * \
-                        avango.gua.make_rot_mat(_transformed_quat)
-
-    self.inputmapping.set_abs_mat(_position_yaw_mat)
-  '''
 
 
   ## Applies a new scaling to this input mapping.
@@ -592,75 +533,6 @@ class SteeringNavigation(Navigation):
     self.map_scale_input(_s)
     self.map_movement_input(_x, _y, _z, _rx, _ry, _rz)
 
-
-    '''
-    # get translation values from input device
-    _trans_vec = avango.gua.Vec3(_x,_y,_z)
-    _trans_input = _trans_vec.length()
-
-    # get rotation values from input device
-    _rot_vec = avango.gua.Vec3(_rx,_ry,_rz) * self.input_rot_factor
-    _rot_input = _rot_vec.length()
-
-    # only accumulate inputs on absolute matrix when the device values change
-    if _trans_input != 0.0 or _rot_input != 0.0:
-
-      # transfer function for translation
-      if _trans_input != 0.0:
-        _trans_vec.normalize()
-        _trans_vec *= math.pow(min(_trans_input,1.0), 3) * self.input_trans_factor * self.sf_scale.value
-
-      # global platform rotation in the world
-      _platform_quat = self.sf_abs_mat.value.get_rotate()
-
-      # Fix if quaternion angle is nan
-      _quat_angle = _platform_quat.get_angle()
-
-      if math.isnan(_quat_angle) == False:
-        _platform_rot_mat = avango.gua.make_rot_mat(_quat_angle, _platform_quat.get_axis())
-        self.lf_quat_angle = _quat_angle
-      else:
-        _platform_rot_mat = avango.gua.make_rot_mat(self.lf_quat_angle, _platform_quat.get_axis())
-
-      # global rotation of the device in the world
-      _device_forward_yaw = Utilities.get_yaw(self.sf_station_mat.value)
-      _device_rot_mat = avango.gua.make_rot_mat(math.degrees(_device_forward_yaw), 0, 1, 0)
-
-      # combined platform and device rotation
-      _combined_rot_mat = _platform_rot_mat * _device_rot_mat
- 
-      # rotation center of the device
-      _rot_center = self.sf_station_mat.value.get_translate() * self.sf_scale.value
-
-      # transformed translation, rotation and rotation center
-      _transformed_trans_vec = self.transform_vector_with_matrix(_trans_vec, _combined_rot_mat)
-
-      _transformed_rot_vec = self.transform_vector_with_matrix(_rot_vec, _combined_rot_mat)
-      _transformed_rot_center = self.transform_vector_with_matrix(_rot_center, _platform_rot_mat)
-      
-      # create new transformation matrix
-      _new_mat = avango.gua.make_trans_mat(_transformed_trans_vec) * \
-                 self.sf_abs_mat.value * \
-                 avango.gua.make_trans_mat(_rot_center) * \
-                 avango.gua.make_rot_mat( _rot_vec.y, 0, 1, 0) * \
-                 avango.gua.make_rot_mat( _rot_vec.x, 1, 0, 0) * \
-                 avango.gua.make_rot_mat( _rot_vec.z, 0, 0, 1) * \
-                 avango.gua.make_trans_mat(_rot_center * -1)
-
-      ## # update matrix on coupled navigations
-      ##_global_rot_center = self.sf_abs_mat.value * _rot_center
-      ##_global_rot_center = avango.gua.Vec3(_global_rot_center.x, _global_rot_center.y, _global_rot_center.z)
-      ##
-      ##for _navigation in self.NAVIGATION.coupled_navigations:
-      ##  _navigation.inputmapping.modify_abs_uncorrected_mat(_transformed_trans_vec, _transformed_rot_vec, _global_rot_center)
-
-    else:
-      # the device values are all equal to zero
-      _new_mat = self.sf_abs_mat.value
-
-    # save the computed new matrix
-    self.sf_abs_uncorrected_mat.value = _new_mat   
-    '''
   
   ## Evaluated when value changes.
   @field_has_changed(sf_reset_trigger)
@@ -708,76 +580,73 @@ class SteeringNavigation(Navigation):
       _nav_mat = self.bc_get_nav_mat()
       
       _nav_mat = avango.gua.make_trans_mat(_nav_mat.get_translate()) * \
-                  avango.gua.make_rot_mat(self.transition_start_quat)
+                  avango.gua.make_rot_mat(self.transition_target_quat)
 
       self.bc_set_nav_mat(_nav_mat)
 
       self.nav_mode_transition_trigger.Active.value = False # disable transition callback
     
 
-
   def groundfollowing_callback(self):
   
-    _nav_mat = self.bc_get_nav_mat()
-    _nav_scale = self.bc_get_nav_scale()
-  
-    # prepare ground following matrix
-    _gf_start_pos = self.sf_reference_mat.value.get_translate()
-    _gf_start_pos.y = self.ray_start_height
-    _gf_start_pos = self.sf_platform_mat.value * _gf_start_pos
-    self.sf_gf_start_mat.value = avango.gua.make_trans_mat(_gf_start_pos.x, _gf_start_pos.y, _gf_start_pos.z) * self.ground_pick_direction_mat
+    if self.nav_mode_transition_trigger.Active.value == False: # not in a transition process
+      _nav_mat = self.bc_get_nav_mat()
+      _nav_scale = self.bc_get_nav_scale()
+    
+      # prepare ground following matrix
+      _gf_start_pos = self.sf_reference_mat.value.get_translate()
+      _gf_start_pos.y = self.ray_start_height
+      _gf_start_pos = self.sf_platform_mat.value * _gf_start_pos
+      self.sf_gf_start_mat.value = avango.gua.make_trans_mat(_gf_start_pos.x, _gf_start_pos.y, _gf_start_pos.z) * self.ground_pick_direction_mat
 
-    if len(self.mf_ground_pick_result.value) > 0: # an intersection with the ground was found
-  
-      # get first intersection target
-      _pick_result = self.mf_ground_pick_result.value[0]             
-      #print(_pick_result.Object.value, _pick_result.Object.value.Name.value)
+      if len(self.mf_ground_pick_result.value) > 0: # an intersection with the ground was found
+    
+        # get first intersection target
+        _pick_result = self.mf_ground_pick_result.value[0]             
+        #print(_pick_result.Object.value, _pick_result.Object.value.Name.value)
 
-      # compare distance to ground and ray_start_height
-      _distance_to_ground = _pick_result.Distance.value * self.ground_pick_length
-      _difference = _distance_to_ground - (self.ray_start_height * _nav_scale)
-      _difference = round(_difference, 3)
+        # compare distance to ground and ray_start_height
+        _distance_to_ground = _pick_result.Distance.value * self.ground_pick_length
+        _difference = _distance_to_ground - (self.ray_start_height * _nav_scale)
+        _difference = round(_difference, 3)
 
-      if _difference < 0: # climb up
+        if _difference < 0: # climb up
 
-        # end falling when necessary
-        if self.falling == True:
-          self.falling = False
-          self.fall_velocity = self.initial_fall_velocity 
-
-        # move player up
-        _up_vec = avango.gua.Vec3(0.0, _difference * -1.0 * self.height_modification_factor, 0.0)
-        _nav_mat = avango.gua.make_trans_mat(_up_vec) * _nav_mat
-
-        self.bc_set_nav_mat(_nav_mat)
-
-
-      elif _difference > 0:
-        
-        if _difference > (self.ray_start_height * _nav_scale): # falling
-
-          # make player fall down faster every frame
-          self.falling = True
-          _fall_vec = avango.gua.Vec3(0.0, -self.fall_velocity, 0.0)
-          _nav_mat = avango.gua.make_trans_mat(_fall_vec) * _nav_mat
-
-          self.bc_set_nav_mat(_nav_mat)
-
-          self.fall_velocity += 0.005
-          
-
-        else: # climb down
-          
           # end falling when necessary
-          if self.falling:
+          if self.falling == True:
             self.falling = False
             self.fall_velocity = self.initial_fall_velocity 
 
-          # move platform downwards
-          _down_vec = avango.gua.Vec3(0.0, _difference * -1.0 * self.height_modification_factor, 0.0)
-          _nav_mat = avango.gua.make_trans_mat(_down_vec) * _nav_mat
-          
+          # move player up
+          _up_vec = avango.gua.Vec3(0.0, _difference * -1.0 * self.height_modification_factor, 0.0)
+          _nav_mat = avango.gua.make_trans_mat(_up_vec) * _nav_mat
+
           self.bc_set_nav_mat(_nav_mat)
 
+        elif _difference > 0:
+          
+          if _difference > (self.ray_start_height * _nav_scale): # falling
+
+            # make player fall down faster every frame
+            self.falling = True
+            self.fall_velocity = min(self.fall_velocity + 0.003, 0.2)
+            
+            _fall_vec = avango.gua.Vec3(0.0, -self.fall_velocity, 0.0)
+            _nav_mat = avango.gua.make_trans_mat(_fall_vec) * _nav_mat
+
+            self.bc_set_nav_mat(_nav_mat)
+            
+          else: # climb down
+            
+            # end falling when necessary
+            if self.falling:
+              self.falling = False
+              self.fall_velocity = self.initial_fall_velocity 
+
+            # move platform downwards
+            _down_vec = avango.gua.Vec3(0.0, _difference * -1.0 * self.height_modification_factor, 0.0)
+            _nav_mat = avango.gua.make_trans_mat(_down_vec) * _nav_mat
+            
+            self.bc_set_nav_mat(_nav_mat)
 
           
