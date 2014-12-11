@@ -65,7 +65,7 @@ spacemouse_navigation.my_constructor( STARTING_MATRIX = avango.gua.make_trans_ma
                                     , GROUND_FOLLOWING_SETTINGS = [False, 0.75]
                                     , INVERT = True
                                     , TRACE_VISIBILITY_LIST = trace_visibility_list_table_nav
-                                    , DEVICE_TRACKING_NAME = 'device-pointer1'
+                                    , DEVICE_TRACKING_NAME = 'tracking-dlp-pointer1'
                                     , REACTS_ON_PORTAL_TRANSIT = False)
 
 '''

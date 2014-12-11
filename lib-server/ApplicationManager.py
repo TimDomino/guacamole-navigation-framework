@@ -373,7 +373,7 @@ class ApplicationManager(avango.script.Script):
     ## @var server_transform
     # Transform node representing the position and orientation of the server control monitor.
     self.server_transform = avango.gua.nodes.TransformNode(Name = "server_transform")
-    self.server_transform.Transform.value = avango.gua.make_trans_mat(0, 8, 0) * \
+    self.server_transform.Transform.value = avango.gua.make_trans_mat(0,20, 0) * \
                                             avango.gua.make_rot_mat(-90, 1, 0, 0)
     self.NET_TRANS_NODE.Children.value.append(self.server_transform)
 
@@ -387,10 +387,10 @@ class ApplicationManager(avango.script.Script):
     # Screen node representing the server's screen.
     self.screen = avango.gua.nodes.ScreenNode(Name = "server_screen")
     self.screen.Transform.value = avango.gua.make_trans_mat(0.0, 0.0, -0.5)
-    self.screen.Width.value = 160/1.5 * 0.5
-    self.screen.Height.value = 100/1.5 * 0.5
-    #self.screen.Width.value = 160/1.5 * 0.85
-    #self.screen.Height.value = 100/1.5 * 0.85    
+    #self.screen.Width.value = 160/1.5 * 0.5
+    #self.screen.Height.value = 100/1.5 * 0.5
+    self.screen.Width.value = 160/1.5 * 0.85
+    self.screen.Height.value = 100/1.5 * 0.85    
     self.server_transform.Children.value.append(self.screen)
 
     ## @var camera
