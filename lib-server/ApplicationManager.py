@@ -234,24 +234,20 @@ class ApplicationManager(avango.script.Script):
             else:
               print_warning("Warning: No empty slot left for user " + str(_u_id) + " in workspace " + str(_workspace.name) + " on display " + str(_display.name))
               continue
-            
+
             # start a client on display host if necessary (only once)
             if START_CLIENTS and _u_id == 0:
 
-              if _display.hostname != _hostname:
+              # determine display class, e.g. PhysicalDisplay.LargePowerwall
+              _display_class_with_module = _display.__class__.__module__ + "." + _display.__class__.__name__
 
-                # run client process on host
-                # command line parameters: server ip, platform id, display name, screen number
-                _ssh_run = subprocess.Popen(["ssh", _display.hostname, _directory_name + \
-                "/start-client.sh " + _server_ip + " " + str(WORKSPACE_CONFIG) + " " + str(_w_id) + " " + \
-                str(_dg_id) + " " + str(_s_id) + " " + _display.name]
-                , stderr=subprocess.PIPE, universal_newlines=True)
-                time.sleep(1)
-
-                #print("ssh", _display.hostname, _directory_name, _server_ip)
-                #print("ssh", _display.hostname, _directory_name + \
-                #"/start-client.sh " + _server_ip + " " + str(WORKSPACE_CONFIG) + " " + str(_w_id) + " " + \
-                #str(_dg_id) + " " + str(_s_id) + " " + _display.name)
+              # run client process on host
+              # start-client.sh SERVER_IP WORKSPACE_ID DISPLAY_GROUP_ID SCREEN_ID DISPLAY_MODULE_NAME.DISPLAY_CLASS NAME
+              _ssh_run = subprocess.Popen(["ssh", _display.hostname, _directory_name + \
+              "/start-client.sh " + _server_ip + " " + str(_w_id) + " " + \
+              str(_dg_id) + " " + str(_s_id) + " " + _display_class_with_module]
+              , stderr=subprocess.PIPE, universal_newlines=True)
+              time.sleep(1)
 
 
     ## Handle virtual viewing setups ##

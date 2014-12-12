@@ -377,3 +377,19 @@ class MitsubishiStereoTV(PhysicalDisplay):
                     , stereomode = "CHECKERBOARD"
                     , render_mask = render_mask
                     )
+
+## Display configuration for the Dell monitors in the VR lab. 
+class DellMonitor(PhysicalDisplay):
+
+  ## Default constructor.
+  def __init__(self, render_mask = ""):
+    PhysicalDisplay.__init__( self
+                    , hostname = "daedalos"
+                    , name = "daedalos_desktop"
+                    , resolution = (2560, 1440)
+                    , displaystrings = [":0.0"]
+                    , size = (0.595, 0.335)
+                    , transformation = avango.gua.make_trans_mat(0.0, 0.0, 0.0)
+                    , stereo = False
+                    , render_mask = render_mask
+                    )

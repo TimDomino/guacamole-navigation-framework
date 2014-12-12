@@ -7,7 +7,6 @@
 import avango
 import avango.script
 import avango.gua
-import avango.oculus
 
 # import framework libraries
 import ClientMaterialUpdaters
@@ -131,7 +130,7 @@ def prepare_pitoti():
 
 
 # Command line parameters:
-# main.py SERVER_IP WORKSPACE_CONFIG_FILE WORKSPACE_ID DISPLAY_GROUP_ID SCREEN_ID DISPLAY_NAME
+# main.py SERVER_IP WORKSPACE_ID DISPLAY_GROUP_ID SCREEN_ID DISPLAY_CLASS_NAME
 
 ## Main method for the client application.
 def start():
@@ -142,21 +141,18 @@ def start():
   # get the server ip
   server_ip = str(sys.argv[1])
 
-  # get the workspace config file #
-  workspace_config_file = str(sys.argv[2])
-  exec('from ' + workspace_config_file.replace("/", ".").replace(".py", "") + ' import displays', globals())
-
   # get the workspace id
-  workspace_id = int(sys.argv[3])
+  workspace_id = int(sys.argv[2])
 
   # get the display group id
-  display_group_id = int(sys.argv[4])
+  display_group_id = int(sys.argv[3])
 
   # get the screen id
-  screen_id = int(sys.argv[5])
+  screen_id = int(sys.argv[4])
 
-  # get the display name
-  display_name = str(sys.argv[6])
+  # get the display module and class name
+  display_module_name = str(sys.argv[5].split(".")[0])
+  display_class_name = str(sys.argv[5].split(".")[1])
 
   # get own hostname
   hostname = open('/etc/hostname', 'r').readline()
@@ -184,15 +180,14 @@ def start():
   avango.gua.load_shading_models_from("data/materials")
   avango.gua.load_materials_from("data/materials")
   
-  
   #prepare_volume()
   prepare_medieval()
   #prepare_pitoti()
 
-  # get the display instance
-  for _display in displays:
-    if _display.name == display_name:
-      handled_display_instance = _display
+  # create the handled display instance
+  display_module = __import__(display_module_name)
+  display_class = getattr(display_module, display_class_name)
+  handled_display_instance = display_class()
 
   # create a viewer
   viewer = avango.gua.nodes.Viewer()
