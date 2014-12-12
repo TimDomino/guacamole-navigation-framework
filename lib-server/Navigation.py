@@ -47,8 +47,6 @@ class Navigation(VisibilityHandler1D):
   def __init__(self):
     self.super(Navigation).__init__()
 
-    exec('from ApplicationManager import *', globals())
-
     ### variables ###
 
     ## @var nav_mat

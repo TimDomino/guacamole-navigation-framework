@@ -76,8 +76,13 @@ class ApplicationManager(avango.script.Script):
 
     _workspace_config_file_name = WORKSPACE_CONFIG.replace(".py", "")
     _workspace_config_file_name = _workspace_config_file_name.replace("/", ".")
-    exec('from ' + _workspace_config_file_name + ' import workspaces', globals())
-    exec('from ' + _workspace_config_file_name + ' import virtual_display_groups', globals())
+    
+    # import workspace configuration file
+    __import__(_workspace_config_file_name)
+    workspace_config_file_module = sys.modules[_workspace_config_file_name]
+
+    workspaces = workspace_config_file_module.workspaces
+    virtual_display_groups = workspace_config_file_module.virtual_display_groups
     
     # parameters
     ## @var background_texture
