@@ -12,13 +12,12 @@ import avango.daemon
 
 # import framework libraries
 from ApplicationManager import APP_all_workspaces
-import Utilities
-from Scene import *
 from ConsoleIO import *
-
+from Scene import *
 from scene_config import scenegraphs
 from scene_config import scenes
 from scene_config import enable_key_bindings
+import Utilities
 
 # import python libraries
 import math

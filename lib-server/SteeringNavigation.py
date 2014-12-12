@@ -9,11 +9,9 @@ import avango.gua
 import avango.script
 
 ### import framework libraries
-from Device           import *
-#from GroundFollowing  import *
-#from InputMapping     import *
-from Intersection       import *
-from Navigation       import *
+from Device import *
+from Intersection import *
+from Navigation import *
 import Utilities
 from scene_config import scenegraphs
 

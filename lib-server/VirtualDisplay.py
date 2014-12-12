@@ -11,9 +11,6 @@ from avango.script import field_has_changed
 
 # import framework libraries
 from Display import *
-from ConsoleIO import *
-from scene_config import scenegraphs
-
 
 ## A VirtualDisplay is a display medium of another location in the scene in the form of a texture.
 class VirtualDisplay(Display):

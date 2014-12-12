@@ -13,8 +13,7 @@ import avango.daemon
 # import framework libraries
 from ApplicationManager import APP_all_virtual_display_groups
 from ApplicationManager import APP_all_user_representations
-from DisplayGroup import *
-from VisibilityHandler import *
+from VisibilityHandler import VisibilityHandler2D
 from TrackingReader import TrackingTargetReader
 import Utilities
 

@@ -8,8 +8,6 @@ import avango
 import avango.gua
 import avango.script
 
-# import python libraries
-# ...
 
 ## Helper class to determine the intersections of a ray with the objects in
 # a scene.

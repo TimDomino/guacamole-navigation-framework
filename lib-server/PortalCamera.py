@@ -10,7 +10,7 @@ import avango.script
 from avango.script import field_has_changed
 
 # import framework libraries
-from DisplayGroup import *
+from DisplayGroup import VirtualDisplayGroup
 from PortalCameraNavigation import *
 from TrackingReader import *
 from Tool import *

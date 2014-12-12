@@ -15,10 +15,9 @@ from ApplicationManager import APP_all_user_representations
 from ApplicationManager import APP_current_avatar_mode
 from Intersection import *
 from TrackingReader import *
-from VisibilityHandler import *
+from VisibilityHandler import VisibilityHandler2D
 from ConsoleIO import *
 from scene_config import scenegraphs
-import Utilities
 
 # import math libraries
 import math

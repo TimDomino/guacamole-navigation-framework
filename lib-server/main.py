@@ -8,10 +8,9 @@ import avango
 import avango.gua
 
 # import framework libraries
-from SceneManager import *
-from ApplicationManager import *
-
+from ApplicationManager import ApplicationManager
 from scene_config import scenegraphs
+from SceneManager import SceneManager
 
 # import python libraries
 import sys

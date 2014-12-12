@@ -11,7 +11,7 @@ import avango.gua
 from ApplicationManager import APP_all_user_representations
 from ApplicationManager import APP_current_avatar_mode
 from ConsoleIO import *
-from VisibilityHandler import *
+from VisibilityHandler import VisibilityHandler2D
 from scene_config import scenegraphs
 
 ## Geometric representation of a Video3D object in a Navigation.

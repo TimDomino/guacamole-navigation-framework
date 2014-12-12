@@ -8,11 +8,11 @@ import avango
 import avango.gua
 import avango.daemon
 from avango.script import field_has_changed
-from   examples_common.GuaVE import GuaVE
+from examples_common.GuaVE import GuaVE
 
 # import framework libraries
-from   ConsoleIO import *
-from   scene_config import scenegraphs
+from ConsoleIO import *
+from scene_config import scenegraphs
 
 # import python libraries
 import os

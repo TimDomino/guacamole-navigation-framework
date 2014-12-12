@@ -8,7 +8,6 @@ import avango
 import avango.gua
 
 # import framework libraries
-from ConsoleIO import *
 from DisplayGroup import *
 from PortalCamera import *
 from RayPointer import *

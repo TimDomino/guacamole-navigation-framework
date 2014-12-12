@@ -10,12 +10,6 @@ import avango.script
 import avango.daemon
 from avango.script import field_has_changed
 
-# import framework libraries
-# ...
-
-# import python libraries
-# ...
-
 
 ## Reads tracking values of a device registered in daemon.
 class TrackingTargetReader(avango.script.Script):
