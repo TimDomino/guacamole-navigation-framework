@@ -13,16 +13,34 @@ from   examples_common.GuaVE import GuaVE
 # import framework libraries
 from   ConsoleIO import *
 from   scene_config import scenegraphs
-from   Video3D import *
 
 # import python libraries
 import os
 import subprocess
 import time
 
+## global variables which can be retrieved by the whole application ##
+
+## @var APP_all_user_reprsentations
+# List of all UserRepresentation instances active in the setup.
+APP_all_user_representations = []
+
+## @var APP_all_virtual_display_groups
+# List of all VirtualDisplayGroup instances active in the setup.
+APP_all_virtual_display_groups = []
+
+## @var APP_all_workspaces
+# List of all Workspace instances active in the setup.
+APP_all_workspaces = []
+
+## @var APP_current_avatar_mode
+# String saying which type of avatars are currently used. Can be "JOSEPH" or "VIDEO"
+APP_current_avatar_mode = "JOSEPH"
+
+
+
 ## Class to build the scenegraph from the Workspaces, Display Groups and Users created.
 # Builds a server control monitor for debugging purposes.
-
 class ApplicationManager(avango.script.Script):
   
   ## @var viewer
@@ -32,18 +50,6 @@ class ApplicationManager(avango.script.Script):
   ## @var shell
   # The GuaVE shell to be used when the application is running.
   shell = GuaVE()
-
-  ## @var all_user_reprsentations
-  # List of all UserRepresentation instances active in the setup.
-  all_user_representations = []
-
-  ## @var all_virtual_display_groups
-  # List of all VirtualDisplayGroup instances active in the setup.
-  all_virtual_display_groups = []
-
-  ## @var all_workspaces
-  # List of all Workspace instances active in the setup.
-  all_workspaces = []
 
   ## @var sf_key1
   # Boolean field representing the key for action 1.
@@ -60,10 +66,6 @@ class ApplicationManager(avango.script.Script):
   ## @var sf_key4
   # Boolean field representing the key for action 4.
   sf_key4 = avango.SFBool()
-
-  ## @var current_avatar_mode
-  # String saying which type of avatars are currently used. Can be "JOSEPH" or "VIDEO"
-  current_avatar_mode = "JOSEPH"
 
   ## Default constructor.
   def __init__(self):
@@ -140,7 +142,7 @@ class ApplicationManager(avango.script.Script):
     ## @var workspaces
     # List of all workspace instances loaded from workspace configuration file.
     self.workspaces = workspaces
-    ApplicationManager.all_workspaces = workspaces
+    APP_all_workspaces = workspaces
 
     ## @var requestable_navigations
     # Navigation instances which are switchable to by a button press on the device.
@@ -159,7 +161,7 @@ class ApplicationManager(avango.script.Script):
     # List of VirtualDisplayGroup instances that have the transitable flag set true.
     self.transit_display_groups = []
 
-    ApplicationManager.all_virtual_display_groups = virtual_display_groups
+    APP_all_virtual_display_groups = virtual_display_groups
 
 
     ## Handle physical viewing setups ##
@@ -214,7 +216,7 @@ class ApplicationManager(avango.script.Script):
           # create user representation in display group
           _user_repr = _user.create_user_representation_for(_display_group
                                                           , _view_transform_node)
-          ApplicationManager.all_user_representations.append(_user_repr)
+          APP_all_user_representations.append(_user_repr)
 
           # create tool representation in display_group
           for _tool in _workspace.tools:
@@ -223,7 +225,7 @@ class ApplicationManager(avango.script.Script):
             # register portal display groups if this tool representation is a PortalCameraRepresentation
             try:
               _tool_repr.virtual_display_group
-              ApplicationManager.all_virtual_display_groups.append(_tool_repr.virtual_display_group)
+              APP_all_virtual_display_groups.append(_tool_repr.virtual_display_group)
             except:
               pass
 
@@ -259,14 +261,14 @@ class ApplicationManager(avango.script.Script):
 
     _virtual_user_representations = []
 
-    for _display_group in ApplicationManager.all_virtual_display_groups:
+    for _display_group in APP_all_virtual_display_groups:
 
       _display_group.add_virtual_display_nodes()
       _transit_entry_added = False
       _virtual_user_representations_of_dg = []
 
       # create user representations
-      for _physical_user_repr in ApplicationManager.all_user_representations:
+      for _physical_user_repr in APP_all_user_representations:
 
         _complex = True
         if _display_group.viewing_mode == "2D":
@@ -324,7 +326,7 @@ class ApplicationManager(avango.script.Script):
 
             
     for _virtual_user_representation in _virtual_user_representations:
-      ApplicationManager.all_user_representations.append(_virtual_user_representation)
+      APP_all_user_representations.append(_virtual_user_representation)
 
 
     ## Initialize group names ##
@@ -342,11 +344,11 @@ class ApplicationManager(avango.script.Script):
         for _user in _workspace.users:
           _user.handle_correct_visibility_groups_for(_display_group)
 
-          for _portal_display_group in ApplicationManager.all_virtual_display_groups:
+          for _portal_display_group in APP_all_virtual_display_groups:
             _user.handle_correct_visibility_groups_for(_portal_display_group)
 
     # connect proper navigations
-    for _user_representation in ApplicationManager.all_user_representations:
+    for _user_representation in APP_all_user_representations:
       _user_representation.connect_navigation_of_display_group(0)
 
     # video 3D group names (after users were assigned to navigations)
@@ -407,7 +409,7 @@ class ApplicationManager(avango.script.Script):
     # set render mask properly
     _render_mask = "(main_scene"
 
-    for _user_repr in ApplicationManager.all_user_representations:
+    for _user_repr in APP_all_user_representations:
 
       if _user_repr.view_transform_node.Name.value == "scene_matrix":
         _render_mask = _render_mask + " | " + _user_repr.view_transform_node.Parent.value.Name.value + "_" + _user_repr.head.Name.value
@@ -471,7 +473,7 @@ class ApplicationManager(avango.script.Script):
                           , "portal" : {"dlp_wall" : True, "table" : False, "lcd_wall" : True, "portal" : False}
                               }
 
-      for _workspace in ApplicationManager.all_workspaces:
+      for _workspace in APP_all_workspaces:
 
         for _user in _workspace.users:
           _user.change_visiblity_table(avatar_visibility_table)
@@ -479,7 +481,7 @@ class ApplicationManager(avango.script.Script):
         if _workspace.video_3D != None:
           _workspace.video_3D.change_visiblity_table(video_visibility_table)
 
-      for _tool in ApplicationManager.all_workspaces[0].tools:
+      for _tool in APP_all_workspaces[0].tools:
        _tool.change_visiblity_table(tool_visibility_table)
       
       print_message("Visibility tables in workspace 0 changed: table tool representations invisible on walls.")
@@ -511,7 +513,7 @@ class ApplicationManager(avango.script.Script):
                           , "portal" : {"dlp_wall" : True, "table" : False, "lcd_wall" : True, "portal" : False}
                               }
 
-      for _workspace in ApplicationManager.all_workspaces:
+      for _workspace in APP_all_workspaces:
 
         for _user in _workspace.users:
           _user.change_visiblity_table(avatar_visibility_table)
@@ -519,7 +521,7 @@ class ApplicationManager(avango.script.Script):
         if _workspace.video_3D != None:
           _workspace.video_3D.change_visiblity_table(video_visibility_table)
 
-      for _tool in ApplicationManager.all_workspaces[0].tools:
+      for _tool in APP_all_workspaces[0].tools:
        _tool.change_visiblity_table(tool_visibility_table)
       
       print_message("Visibility tables in workspace 0 changed: table tool and user representations visible on walls.")
@@ -530,7 +532,7 @@ class ApplicationManager(avango.script.Script):
 
     if self.sf_key3.value == True:
 
-      ApplicationManager.current_avatar_mode = "VIDEO"
+      APP_current_avatar_mode = "VIDEO"
 
       avatar_visibility_table = {
                             "dlp_wall"  : {"table" : False, "lcd_wall" : False, "portal" : False}
@@ -546,7 +548,7 @@ class ApplicationManager(avango.script.Script):
                           , "portal" : {"dlp_wall" : True, "table" : False, "lcd_wall" : True} 
                           }
 
-      for _workspace in ApplicationManager.all_workspaces:
+      for _workspace in APP_all_workspaces:
         if _workspace.video_3D != None:
 
           for _user in _workspace.users:
@@ -562,7 +564,7 @@ class ApplicationManager(avango.script.Script):
 
     if self.sf_key4.value == True:
 
-      ApplicationManager.current_avatar_mode = "JOSEPH"
+      APP_current_avatar_mode = "JOSEPH"
 
       video_visibility_table = {
                             "dlp_wall"  : {"table" : False, "lcd_wall" : False, "portal" : False}
@@ -578,7 +580,7 @@ class ApplicationManager(avango.script.Script):
                           , "portal" : {"dlp_wall" : True, "table" : False, "lcd_wall" : True} 
                           }
 
-      for _workspace in ApplicationManager.all_workspaces:
+      for _workspace in APP_all_workspaces:
         if _workspace.video_3D != None:
 
           for _user in _workspace.users:
@@ -712,9 +714,9 @@ class ApplicationManager(avango.script.Script):
   # Users cannot see the avatars in own display group, but the ones in others.
   def init_avatar_group_names(self):
 
-    for _user_repr_1 in ApplicationManager.all_user_representations:
+    for _user_repr_1 in APP_all_user_representations:
 
-      for _user_repr_2 in ApplicationManager.all_user_representations:
+      for _user_repr_2 in APP_all_user_representations:
 
         if _user_repr_2.DISPLAY_GROUP != _user_repr_1.DISPLAY_GROUP:
 

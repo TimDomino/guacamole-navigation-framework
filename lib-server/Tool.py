@@ -11,7 +11,8 @@ from avango.script import field_has_changed
 import avango.daemon
 
 # import framework libraries
-from ApplicationManager import *
+from ApplicationManager import APP_all_virtual_display_groups
+from ApplicationManager import APP_all_user_representations
 from DisplayGroup import *
 from VisibilityHandler import *
 from TrackingReader import TrackingTargetReader
@@ -154,7 +155,6 @@ class Tool(VisibilityHandler2D):
                      , VISIBILITY_TABLE):
 
     self.table_constructor(VISIBILITY_TABLE)
-    exec('from ApplicationManager import *', globals())
 
     # references
     ## @var WORKSPACE_INSTANCE
@@ -247,7 +247,7 @@ class Tool(VisibilityHandler2D):
       for _display_group in self.WORKSPACE_INSTANCE.display_groups:
         self.handle_correct_visibility_groups_for(_display_group)
 
-      for _virtual_display_group in ApplicationManager.all_virtual_display_groups:
+      for _virtual_display_group in APP_all_virtual_display_groups:
         self.handle_correct_visibility_groups_for(_virtual_display_group)
 
 
@@ -260,7 +260,7 @@ class Tool(VisibilityHandler2D):
     for _display_group in self.WORKSPACE_INSTANCE.display_groups:
       self.handle_correct_visibility_groups_for(_display_group)
 
-    for _virtual_display_group in ApplicationManager.all_virtual_display_groups:
+    for _virtual_display_group in APP_all_virtual_display_groups:
       self.handle_correct_visibility_groups_for(_virtual_display_group)
 
 
@@ -317,7 +317,7 @@ class Tool(VisibilityHandler2D):
           _assigned_user_tool_visible_for.append(_tool_repr.USER_REPRESENTATION.view_transform_node.Name.value)
 
       # check for all user representations outside the handled display group
-      for _user_repr in ApplicationManager.all_user_representations:
+      for _user_repr in APP_all_user_representations:
 
         if _user_repr.DISPLAY_GROUP != _handled_display_group_instance:
 

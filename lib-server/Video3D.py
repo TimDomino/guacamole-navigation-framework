@@ -8,6 +8,8 @@ import avango
 import avango.gua
 
 # import framework libraries
+from ApplicationManager import APP_all_user_representations
+from ApplicationManager import APP_current_avatar_mode
 from ConsoleIO import *
 from VisibilityHandler import *
 from scene_config import scenegraphs
@@ -78,9 +80,6 @@ class Video3D(VisibilityHandler2D):
   ## Default constructor.
   def __init__(self):
     self.super(Video3D).__init__()
-
-    # import ApplicationManager as it strangely does not work at the top of this file
-    exec('from ApplicationManager import *', globals())
 
   ## Custom constructor.
   # @param WORKSPACE_INSTANCE The instance of Workspace to which this Tool belongs to.
@@ -154,10 +153,10 @@ class Video3D(VisibilityHandler2D):
     _video_visible_for = []
 
     # if the navigation is not used, hide the video representation, also when avatar mode is not set to video
-    if len(NAVIGATION_INSTANCE.active_user_representations) > 0 and ApplicationManager.current_avatar_mode == "VIDEO":
+    if len(NAVIGATION_INSTANCE.active_user_representations) > 0 and APP_current_avatar_mode == "VIDEO":
 
       # loop over all user representations to find the ones for which the video is visible
-      for _user_repr in ApplicationManager.all_user_representations:
+      for _user_repr in APP_all_user_representations:
 
         # video is only visible for users not on the corresponding navigation to avoid physical overlap
         if _user_repr.DISPLAY_GROUP.navigations[_user_repr.connected_navigation_id] != NAVIGATION_INSTANCE:

@@ -10,7 +10,6 @@ import avango.script
 from avango.script import field_has_changed
 
 # import framework libraries
-from ApplicationManager import *
 from Display import *
 from ConsoleIO import *
 from scene_config import scenegraphs

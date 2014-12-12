@@ -9,7 +9,7 @@ import avango.gua
 from avango.script import field_has_changed
 
 # import framework libraries
-from ApplicationManager import *
+from ApplicationManager import APP_all_user_representations
 from VisibilityHandler import *
 from TraceLines import *
 
@@ -161,7 +161,7 @@ class Navigation(VisibilityHandler1D):
 
     _trace_visible_for = []
 
-    for _user_repr in ApplicationManager.all_user_representations:
+    for _user_repr in APP_all_user_representations:
 
       if self.visibility_list[_user_repr.DISPLAY_GROUP.visibility_tag]:
         _trace_visible_for.append(_user_repr.view_transform_node.Name.value)

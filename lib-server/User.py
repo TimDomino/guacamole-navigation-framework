@@ -11,10 +11,13 @@ from avango.script import field_has_changed
 
 # import framework libraries
 from Avatar import *
+from ApplicationManager import APP_all_user_representations
+from ApplicationManager import APP_current_avatar_mode
 from Intersection import *
 from TrackingReader import *
 from VisibilityHandler import *
 from ConsoleIO import *
+from scene_config import scenegraphs
 import Utilities
 
 # import math libraries
@@ -499,7 +502,7 @@ class User(VisibilityHandler2D):
       #  _user.handle_correct_visibility_groups_for(_display_group_instance)
 
       # trigger correct video visibilites at both navigations
-      if self.WORKSPACE_INSTANCE.video_3D != None and ApplicationManager.current_avatar_mode == "VIDEO":
+      if self.WORKSPACE_INSTANCE.video_3D != None and APP_current_avatar_mode == "VIDEO":
         _old_nav = self.WORKSPACE_INSTANCE.display_groups[DISPLAY_GROUP_ID].navigations[_old_nav_id]
         _new_nav = self.WORKSPACE_INSTANCE.display_groups[DISPLAY_GROUP_ID].navigations[NAVIGATION_ID]
         self.WORKSPACE_INSTANCE.video_3D.handle_correct_visibility_groups_for(_old_nav)
@@ -543,7 +546,7 @@ class User(VisibilityHandler2D):
 
       _all_user_reprs_at_display_group = []
 
-      for _user_repr in ApplicationManager.all_user_representations:
+      for _user_repr in APP_all_user_representations:
         if _user_repr.DISPLAY_GROUP == _handled_display_group_instance:
           _all_user_reprs_at_display_group.append(_user_repr)
 
@@ -551,7 +554,7 @@ class User(VisibilityHandler2D):
       _user_visible_for = []
 
       # when video avatars are enabled, do not make josephs visible
-      if ApplicationManager.current_avatar_mode == "JOSEPH":
+      if APP_current_avatar_mode == "JOSEPH":
         
         # append all names of user representations which are not on same navigation
         for _user_repr in _all_user_reprs_at_display_group:
@@ -560,7 +563,7 @@ class User(VisibilityHandler2D):
             _user_visible_for.append(_user_repr.view_transform_node.Name.value)
 
         # check for all user representations outside the handled display group
-        for _user_repr in ApplicationManager.all_user_representations:
+        for _user_repr in APP_all_user_representations:
           if _user_repr.DISPLAY_GROUP != _handled_display_group_instance:
 
             # consider visibility table

@@ -8,7 +8,8 @@ import avango
 import avango.gua
 
 # import framework libraries
-from ApplicationManager import *
+from ApplicationManager import APP_all_user_representations
+from ApplicationManager import APP_all_workspaces
 from VirtualDisplay import VirtualDisplayProxy
 from scene_config import scenegraphs
 
@@ -244,7 +245,7 @@ class VirtualDisplayGroup(DisplayGroup):
     else:
       self.viewing_mode = "2D"
 
-    for _user_repr in ApplicationManager.all_user_representations:
+    for _user_repr in APP_all_user_representations:
       if _user_repr.DISPLAY_GROUP == self:
 
         if self.viewing_mode == "2D":
@@ -298,7 +299,7 @@ class VirtualDisplayGroup(DisplayGroup):
 
     self.settings_node.GroupNames.value = ["0-" + self.viewing_mode, "1-" + self.camera_mode, "2-" + self.negative_parallax, "3-" + self.border_material, "4-" + self.visible]
 
-    for _workspace in ApplicationManager.all_workspaces:
+    for _workspace in APP_all_workspaces:
       for _tool in _workspace.tools:
         _tool.handle_correct_visibility_groups_for(self)
 
@@ -316,9 +317,9 @@ class VirtualDisplayGroup(DisplayGroup):
 
     VirtualDisplayGroup.portal_group_node.Children.value.remove(self.portal_node)
 
-    for _user_repr in ApplicationManager.all_user_representations:
+    for _user_repr in APP_all_user_representations:
       if _user_repr.DISPLAY_GROUP == self:
-        ApplicationManager.all_user_representations.remove(_user_repr)
+        APP_all_user_representations.remove(_user_repr)
         del _user_repr
 
     self.delete_downwards_from(self.portal_node)

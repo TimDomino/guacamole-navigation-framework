@@ -9,7 +9,6 @@ import avango.gua
 import avango.script
 
 # import framework libraries
-from ApplicationManager import *
 import Utilities
 
 # import python libraries

@@ -11,7 +11,7 @@ from avango.script import field_has_changed
 import avango.daemon
 
 # import framework libraries
-from ApplicationManager import *
+from ApplicationManager import APP_all_workspaces
 import Utilities
 from Scene import *
 from ConsoleIO import *
@@ -358,7 +358,7 @@ class SceneManager(avango.script.Script):
       SceneManager.current_far_clip = self.active_scene.far_clip
 
       # reset all navigations to starting position
-      for _workspace in ApplicationManager.all_workspaces:
+      for _workspace in APP_all_workspaces:
         for _display_group in _workspace.display_groups:
           for _nav in _display_group.navigations:
             _nav.reset()
@@ -369,7 +369,7 @@ class SceneManager(avango.script.Script):
   def print_active_scene(self):
   
 
-    for _workspace in ApplicationManager.all_workspaces:
+    for _workspace in APP_all_workspaces:
       for _display_group in _workspace.display_groups:
         for _navigation in _display_group.navigations:
 
