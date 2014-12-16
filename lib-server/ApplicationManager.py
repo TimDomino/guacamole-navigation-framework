@@ -14,6 +14,10 @@ from examples_common.GuaVE import GuaVE
 from ConsoleIO import *
 from scene_config import scenegraphs
 
+# import client framework libraries
+from ClientPortal import *
+from View import View
+
 # import python libraries
 import os
 import subprocess
@@ -96,6 +100,7 @@ class ApplicationManager(avango.script.Script):
     ## @var SCENEGRAPH
     # Reference to the scenegraph.
     self.SCENEGRAPH = scenegraphs[0]
+    self.viewer.SceneGraphs.value = [self.SCENEGRAPH]
 
     ## @var NET_TRANS_NODE
     # Reference to the net transformation node.
@@ -242,19 +247,44 @@ class ApplicationManager(avango.script.Script):
               print_warning("Warning: No empty slot left for user " + str(_u_id) + " in workspace " + str(_workspace.name) + " on display " + str(_display.name))
               continue
 
-            # start a client on display host if necessary (only once)
+            # start a client on display host if necessary (and only once)
             if START_CLIENTS and _u_id == 0:
 
-              # determine display class, e.g. PhysicalDisplay.LargePowerwall
-              _display_class_with_module = _display.__class__.__module__ + "." + _display.__class__.__name__
+              # start remote ssh shell for remote client processes
+              if _hostname != _display.hostname:
 
-              # run client process on host
-              # start-client.sh SERVER_IP WORKSPACE_ID DISPLAY_GROUP_ID SCREEN_ID DISPLAY_MODULE_NAME.DISPLAY_CLASS NAME
-              _ssh_run = subprocess.Popen(["ssh", _display.hostname, _directory_name + \
-              "/start-client.sh " + _server_ip + " " + str(_w_id) + " " + \
-              str(_dg_id) + " " + str(_s_id) + " " + _display_class_with_module]
-              , stderr=subprocess.PIPE, universal_newlines=True)
-              time.sleep(1)
+                # determine display class, e.g. PhysicalDisplay.LargePowerwall
+                _display_class_with_module = _display.__class__.__module__ + "." + _display.__class__.__name__
+
+                # run client process on host
+                # start-client.sh SERVER_IP WORKSPACE_ID DISPLAY_GROUP_ID SCREEN_ID DISPLAY_MODULE_NAME.DISPLAY_CLASS NAME
+                _ssh_run = subprocess.Popen(["ssh", _display.hostname, _directory_name + \
+                "/start-client.sh " + _server_ip + " " + str(_w_id) + " " + \
+                str(_dg_id) + " " + str(_s_id) + " " + _display_class_with_module]
+                , stderr=subprocess.PIPE, universal_newlines=True)
+                time.sleep(1)
+
+              # handle local displays directly by the server application
+              else:
+
+                for _index, _displaystring in enumerate(_display.displaystrings):
+
+                  _view = View()
+                  _view.my_constructor( self.SCENEGRAPH
+                                      , self.viewer
+                                      , _display
+                                      , _w_id
+                                      , _dg_id
+                                      , _s_id
+                                      , _index)
+
+                ## TODO: Initialize ClientPortalManger (only once) when local displays
+                ##       are present.
+                ##       portal_manager = ClientPortalManager()
+                ##       portal_manager.my_constructor(self.SCENEGRAPH, some sort of view list)
+
+
+
 
 
     ## Handle virtual viewing setups ##
@@ -371,79 +401,7 @@ class ApplicationManager(avango.script.Script):
     self.sf_key3.connect_from(self.keyboard_sensor.Button21) # key F3
     self.sf_key4.connect_from(self.keyboard_sensor.Button22) # key F4
 
-    ## Server Control Monitor Setup ##
-
-    ## @var server_transform
-    # Transform node representing the position and orientation of the server control monitor.
-    self.server_transform = avango.gua.nodes.TransformNode(Name = "server_transform")
-    self.server_transform.Transform.value = avango.gua.make_trans_mat(0,20, 0) * \
-                                            avango.gua.make_rot_mat(-90, 1, 0, 0)
-    self.NET_TRANS_NODE.Children.value.append(self.server_transform)
-
-    ## @var eye
-    # Transform node representing the server's eye
-    self.eye = avango.gua.nodes.TransformNode(Name = "server_eye")
-    self.eye.Transform.value = avango.gua.make_trans_mat(0, 0, 0)
-    self.server_transform.Children.value.append(self.eye)
-
-    ## @var screen
-    # Screen node representing the server's screen.
-    self.screen = avango.gua.nodes.ScreenNode(Name = "server_screen")
-    self.screen.Transform.value = avango.gua.make_trans_mat(0.0, 0.0, -0.5)
-    #self.screen.Width.value = 160/1.5 * 0.5
-    #self.screen.Height.value = 100/1.5 * 0.5
-    self.screen.Width.value = 160/1.5 * 0.85
-    self.screen.Height.value = 100/1.5 * 0.85    
-    self.server_transform.Children.value.append(self.screen)
-
-    ## @var camera
-    # Camera used for the server control monitor.
-    self.camera = avango.gua.nodes.Camera()
-    self.camera.SceneGraph.value = self.SCENEGRAPH.Name.value
-    self.camera.LeftScreen.value = self.screen.Path.value
-    self.camera.RightScreen.value = self.screen.Path.value
-    self.camera.LeftEye.value = self.eye.Path.value
-    self.camera.RightEye.value = self.eye.Path.value
-    self.camera.Mode.value = 1
-
-    # set render mask properly
-    _render_mask = "(main_scene"
-
-    for _user_repr in APP_all_user_representations:
-
-      if _user_repr.view_transform_node.Name.value == "scene_matrix":
-        _render_mask = _render_mask + " | " + _user_repr.view_transform_node.Parent.value.Name.value + "_" + _user_repr.head.Name.value
-      else:
-        _render_mask = _render_mask + " | " + _user_repr.view_transform_node.Name.value
-
-    _render_mask = _render_mask + ") && !do_not_display_group && !portal_invisible_group"
-
-    self.camera.RenderMask.value = _render_mask
-
-    ## @var window
-    # Window displaying the server control view.
-    self.window = avango.gua.nodes.Window()
-    self.window.Title.value = "Server Control Monitor"
-    self.window.Size.value = avango.gua.Vec2ui(1280, 1024)
-    self.window.LeftResolution.value = avango.gua.Vec2ui(1280, 1024)
-
-    ## @var pipeline
-    # Pipeline repsonsible for rendering the server control monitor.
-    self.pipeline = avango.gua.nodes.Pipeline()
-    self.pipeline.BackgroundMode.value = avango.gua.BackgroundMode.COLOR
-    self.pipeline.Window.value = self.window
-    self.pipeline.LeftResolution.value = self.window.LeftResolution.value
-    self.pipeline.EnableStereo.value = False
-    self.pipeline.Camera.value = self.camera
-    self.pipeline.EnableFrustumCulling.value = True
-    self.pipeline.EnableSsao.value = False
-    self.pipeline.EnableFPSDisplay.value = True
-    #self.pipeline.Enabled.value = False
-    
-    # add pipeline and scenegraph to viewer
-    self.viewer.Pipelines.value = [self.pipeline]
-    self.viewer.SceneGraphs.value = [self.SCENEGRAPH]
-
+    # set evaluation policy
     self.always_evaluate(True)
 
   ## Called whenever sf_key1 changes.
