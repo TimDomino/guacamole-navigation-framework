@@ -15,6 +15,7 @@ from ApplicationManager import APP_all_virtual_display_groups
 from ApplicationManager import APP_all_user_representations
 from VisibilityHandler import VisibilityHandler2D
 from TrackingReader import TrackingTargetReader
+from DisplayGroup import VirtualDisplayGroup
 import Utilities
 
 ## Geometric representation of a Tool in a DisplayGroup. 

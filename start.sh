@@ -5,7 +5,7 @@
 # OPTION = daemon: just starts daemon
 
 # kill running python on this machine
-if [ "$2" != false ] ; then
+if [ "$2" != "server" ] ; then
     killall python3
 fi
 
