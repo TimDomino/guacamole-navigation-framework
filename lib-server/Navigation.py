@@ -114,6 +114,7 @@ class Navigation(VisibilityHandler1D):
       
       self.trace.update(_mat)
 
+
   def bc_clear_movement_traces(self):
     
     if self.trace != None:
@@ -124,7 +125,6 @@ class Navigation(VisibilityHandler1D):
       _mat = self.sf_platform_mat.value * avango.gua.make_trans_mat(_reference_pos)
       
       self.trace.clear(_mat)
-
 
 
 

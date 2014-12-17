@@ -181,16 +181,17 @@ class VirtualDisplayGroup(DisplayGroup):
     ## @var entry_node
     # Node storing the matrix of the virtual display group's primary display's entry.
     self.entry_node = avango.gua.nodes.TransformNode(Name = "entry")
+    self.NET_TRANS_NODE.distribute_object(self.entry_node)
     self.entry_node.Transform.value = self.displays[0].entry_matrix
     self.portal_node.Children.value.append(self.entry_node)
-    self.NET_TRANS_NODE.distribute_object(self.entry_node)
+
 
     ## @var exit_node
     # Node storing the matrix of the virtual display group's exit.
     self.exit_node = avango.gua.nodes.TransformNode(Name = "exit")
+    self.NET_TRANS_NODE.distribute_object(self.exit_node)
     self.exit_node.Transform.value = avango.gua.make_identity_mat()
     self.portal_node.Children.value.append(self.exit_node)
-    self.NET_TRANS_NODE.distribute_object(self.exit_node)
 
 
     # add texture offset nodes and screen nodes
@@ -332,3 +333,4 @@ class VirtualDisplayGroup(DisplayGroup):
     for _child in NODE.Children.value:
       self.delete_downwards_from(_child)
       del _child
+      

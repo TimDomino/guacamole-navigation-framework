@@ -68,10 +68,12 @@ class Shot(avango.script.Script):
 ## Geometric representation of a PortalCamera in a DisplayGroup.
 class PortalCameraRepresentation(ToolRepresentation):
 
+  '''
   ## @var sf_prior_entry_matrix
   # Field containing the entry matrix of the last frame in order to avoid latency.
   sf_prior_entry_matrix = avango.gua.SFMatrix4()
   sf_prior_entry_matrix.value = avango.gua.make_identity_mat()
+  '''
 
   ## @var sf_entry_matrix
   # Field to which the portal entry matrices are connected to in order to appear above the PortalCamera.
@@ -151,9 +153,10 @@ class PortalCameraRepresentation(ToolRepresentation):
     # base class evaluate
     self.perform_tool_node_transformation()
 
-
+    '''
     self.sf_prior_entry_matrix.value = self.compute_world_transform(self.tool_transform_node) * \
                                        avango.gua.make_trans_mat(0.0, self.TOOL_INSTANCE.portal_height/2, 0.0)
+    '''
 
     # wait for entry node, then connect it if not already done
     if self.entry_matrix_connected == False:
@@ -203,8 +206,8 @@ class PortalCameraRepresentation(ToolRepresentation):
   ## Removes the assigned shot of this representation and makes the portal invisible.
   def deassign_shot(self):
 
-    self.assigned_shot.sf_abs_mat.disconnect()
-    self.assigned_shot.sf_scale.disconnect()
+    #self.assigned_shot.sf_abs_mat.disconnect()
+    #self.assigned_shot.sf_scale.disconnect()
     self.assigned_shot = None
 
     self.virtual_display_group.set_visibility(False)
@@ -401,7 +404,7 @@ class PortalCamera(Tool):
     self.size_down_trigger = avango.script.nodes.Update(Callback = self.size_down_callback, Active = False)
 
 
-    # init field connections
+    ### init field connections ###
     self.sf_focus_button.connect_from(self.device_sensor.Button0)
     self.sf_capture_button.connect_from(self.device_sensor.Button1)
     self.sf_next_rec_button.connect_from(self.device_sensor.Button5)
@@ -415,8 +418,8 @@ class PortalCamera(Tool):
     self.sf_3D_mode_button.connect_from(self.device_sensor.Button8)
     self.sf_negative_parallax_on_button.connect_from(self.device_sensor.Button12)
     self.sf_negative_parallax_off_button.connect_from(self.device_sensor.Button13)
-    self.size_up_trigger.connect_from(self.device_sensor.Button3)
-    self.size_down_trigger.connect_from(self.device_sensor.Button2)
+    self.size_up_trigger.Active.connect_from(self.device_sensor.Button3)
+    self.size_down_trigger.Active.connect_from(self.device_sensor.Button2)
 
 
   ## Creates a PortalCamearRepresentation for this RayPointer at a DISPLAY_GROUP.
@@ -469,7 +472,7 @@ class PortalCamera(Tool):
     return _chosen_tool_representation
 
 
-  def get_local_portal_mat(self):
+  def get_local_portal_camera_mat(self):
     # local portal mat hovering above portal camera device
     return self.tracking_reader.sf_mat.value * avango.gua.make_trans_mat(0.0, self.portal_height * 0.5 + 0.03, 0.0)
 
@@ -500,6 +503,7 @@ class PortalCamera(Tool):
     if len(self.tool_representations) == 0:
       return
 
+    '''
     # handle portal updates in capture mode
     if self.in_capture_mode:
 
@@ -515,9 +519,10 @@ class PortalCamera(Tool):
 
       # compute matrix
       _shot_platform_matrix = _active_tool_representation.sf_prior_entry_matrix.value * \
-                              avango.gua.make_inverse_mat(avango.gua.make_scale_mat(_active_navigation.sf_scale.value))
+                              avango.gua.make_scale_mat(1.0 / _active_navigation.bc_get_nav_scale())
 
-      self.virtual_nav.set_navigation_values(_shot_platform_matrix, _active_navigation.sf_scale.value)
+      self.virtual_nav.set_navigation_values(_shot_platform_matrix, _active_navigation.bc_get_nav_scale())
+    '''
 
     # update user assignment
     self.check_for_user_assignment()
@@ -543,10 +548,17 @@ class PortalCamera(Tool):
 
   ## Sets the scale of the currently active shot or returns when no shot is active.
   # @param SCALE The new scale to be set.
-  def set_scale(self, SCALE):
+  def set_current_shot_nav_scale(self, SCALE):
 
     if self.current_shot != None:
-      self.set_current_shot_scale(SCALE)               
+      self.current_shot.sf_scale.value = SCALE
+
+
+  def set_current_shot_nav_mat(self, MATRIX):
+
+    if self.current_shot != None:
+      self.current_shot.sf_abs_mat.value = MATRIX
+
 
 
   ## Loads a given Shot instances to all representations.
@@ -588,13 +600,15 @@ class PortalCamera(Tool):
       # create shot and assign it
       _active_navigation = _active_tool_representation.DISPLAY_GROUP.navigations[_active_tool_representation.USER_REPRESENTATION.connected_navigation_id]
 
-      # compute matrix
-      _shot_platform_matrix = _active_tool_representation.sf_entry_matrix.value * \
-                              avango.gua.make_inverse_mat(avango.gua.make_scale_mat(_active_navigation.sf_scale.value))
+      # compute shot platform matrix
+      _shot_nav_mat = _active_tool_representation.sf_entry_matrix.value
+      _shot_nav_scale = _active_navigation.bc_get_nav_scale()
+      
+      _shot_platform_mat = _shot_nav_mat * avango.gua.make_scale_mat(1.0 / _shot_nav_scale)
 
       _shot = Shot()
-      _shot.my_constructor(_shot_platform_matrix,
-                           _active_navigation.sf_scale.value,
+      _shot.my_constructor(_shot_platform_mat,
+                           _shot_nav_scale,
                            self.capture_viewing_mode,
                            "PERSPECTIVE",
                            self.capture_parallax_mode)
@@ -613,6 +627,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_capture_button changes.
   @field_has_changed(sf_capture_button)
   def sf_capture_button_changed(self):
+  
     if self.sf_capture_button.value == True and self.in_capture_mode:
 
       # store the preview shot currently loaded
@@ -622,6 +637,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_next_rec_button changes.
   @field_has_changed(sf_next_rec_button)
   def sf_next_rec_button_changed(self):
+  
     if self.sf_next_rec_button.value == True:
       
       # move to next recording in open mode
@@ -654,6 +670,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_open_button changes.
   @field_has_changed(sf_open_close_button)
   def sf_open_button_changed(self):
+  
     if self.sf_open_close_button.value == True:
 
       # open lastly opened portal when no portal is opened
@@ -670,6 +687,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_delete_button changes.
   @field_has_changed(sf_delete_button)
   def sf_delete_button_changed(self):
+  
     if self.sf_delete_button.value == True:
 
       # delete current portal
@@ -685,6 +703,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_2D_mode_button changes.
   @field_has_changed(sf_2D_mode_button)
   def sf_2D_mode_button_changed(self):
+  
     if self.sf_2D_mode_button.value == True:
       
       # switch mode of currently opened shot
@@ -702,6 +721,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_3D_mode_button changes.
   @field_has_changed(sf_3D_mode_button)
   def sf_3D_mode_button_changed(self):
+  
     if self.sf_3D_mode_button.value == True:
       
       # switch mode of currently opened shot
@@ -720,6 +740,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_negative_parallax_on_button changes.
   @field_has_changed(sf_negative_parallax_on_button)
   def sf_negative_parallax_on_button_changed(self):
+  
     if self.sf_negative_parallax_on_button.value == True:
       
       # switch mode of currently opened shot
@@ -738,6 +759,7 @@ class PortalCamera(Tool):
   ## Called whenever sf_negative_parallax_off_button changes.
   @field_has_changed(sf_negative_parallax_off_button)
   def sf_negative_parallax_off_button_changed(self):
+  
     if self.sf_negative_parallax_off_button.value == True:
       
       # switch mode of currently opened shot
